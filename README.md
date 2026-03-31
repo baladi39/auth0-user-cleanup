@@ -1,11 +1,13 @@
 # auth0-user-cleanup
 
-A Rust CLI tool to bulk-delete users from an Auth0 tenant via the Management API. Supports dry-run mode and optional filtering by email domain.
+A Rust CLI tool to bulk-delete users and organizations from an Auth0 tenant via the Management API. Supports dry-run mode and optional filtering.
 
 ## Prerequisites
 
 - [Rust](https://www.rust-lang.org/tools/install) (edition 2024, Rust 1.85+)
-- An Auth0 Machine-to-Machine application with the **Auth0 Management API** authorized and the `delete:users` / `read:users` scopes granted
+- An Auth0 Machine-to-Machine application with the **Auth0 Management API** authorized and the following scopes granted:
+  - **Users**: `read:users`, `delete:users`
+  - **Organizations**: `read:organizations`, `delete:organizations`
 
 ## Setup
 
@@ -88,6 +90,24 @@ cargo run -- --domain example.com --domain test.com
 cargo run -- --dry-run --domain example.com
 ```
 
+### Delete organizations
+
+Use `--resource orgs` to target organizations instead of users.
+
+```bash
+# Dry run — preview organizations that would be deleted
+cargo run -- --resource orgs --dry-run
+
+# Delete all organizations
+cargo run -- --resource orgs
+
+# Filter by name pattern (substring match)
+cargo run -- --resource orgs --name-pattern "test"
+
+# Dry run with name filter
+cargo run -- --resource orgs --name-pattern "staging" --dry-run
+```
+
 ## Environment Variables
 
 | Variable             | Required | Description                                                                 |
@@ -99,7 +119,9 @@ cargo run -- --dry-run --domain example.com
 
 ## Notes
 
-- The tool fetches users in pages of 100. Progress is printed per page.
+- The tool fetches users/organizations in pages of 100. Progress is printed per page.
 - Deletions are rate-limited to ~2 requests/second (500 ms delay between calls) to stay within Auth0 free-tier limits.
 - Users without an email address are identified by their `user_id` in output.
 - Failed deletions are reported but do not stop the run; a summary is printed at the end.
+- `--domain` only applies to users; `--name-pattern` only applies to organizations.
+- Default resource is `users` — existing commands work unchanged.
