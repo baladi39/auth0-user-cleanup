@@ -150,17 +150,26 @@ async fn main() -> anyhow::Result<()> {
         println!("Found {fetched_total} total users, {total} match the domain filter.");
     }
 
+    println!("\nFound {total} users. The following will be deleted:\n");
+    for user in &users {
+        let label = user.email.as_deref().unwrap_or(&user.user_id);
+        println!("  - {label} ({})", user.user_id);
+    }
+
     if dry_run {
-        println!("\nFound {total} users. The following would be deleted:\n");
-        for user in &users {
-            let label = user.email.as_deref().unwrap_or(&user.user_id);
-            println!("  - {label} ({})", user.user_id);
-        }
         println!("\n[DRY RUN] {total} users would be deleted. No changes were made.");
         return Ok(());
     }
 
-    println!("\nFound {total} users. Starting deletion...\n");
+    println!("\nAre you sure you want to delete {total} users? (y/n)");
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input)?;
+    if input.trim().to_lowercase() != "y" {
+        println!("Aborted. No users were deleted.");
+        return Ok(());
+    }
+
+    println!("\nStarting deletion...\n");
 
     let mut deleted = 0usize;
     let mut failed = 0usize;
